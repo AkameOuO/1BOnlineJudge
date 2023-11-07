@@ -1,0 +1,15 @@
+{%- extends base_name -%}
+
+{%- block title -%}Testcase{%- endblock -%}
+{%- block main -%}
+    <h2>Problem {{ problem_id }} {{problem_data[problem_id]["name"]}},Case {{ case_no }}</h2>
+    <textarea id="testcase" class="linenumber" readonly>{{ content.replace('\n','\r\n') }}</textarea>
+    <p>
+        <a href="/testcases/{{problem_id}}">
+            <button>回目錄</button>
+        </a>
+        <a href="?download">
+            <button>download</button>
+        </a>
+    </p>
+{%- endblock -%}

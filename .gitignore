@@ -1,0 +1,10 @@
+__pycache__
+
+*.env
+*.bat
+output
+
+server.crt
+server.key
+server.pem
+session.key

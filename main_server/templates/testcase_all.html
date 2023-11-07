@@ -1,0 +1,11 @@
+{%- extends base_name -%}
+
+{%- block title -%}Testcases{%- endblock -%}
+{%- block main -%}
+    <h2>Testcase list</h2>
+    {%- for p in problem_data -%}
+    {%- if p|verify_problem_start_time -%}
+    <p><a href="/testcases/{{ p }}">{{ p }} {{ problem_data[p]["name"] }}</a></p>
+    {%- endif -%}
+    {%- endfor -%}
+{%- endblock -%}

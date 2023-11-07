@@ -1,0 +1,156 @@
+{%- extends base_name -%}
+
+{%- block title -%}{{ problem_id }} {{ problem_data[problem_id]["name"] }}{%- endblock -%}
+{%- block main -%}
+<h2>{{ problem_id }} {{ problem_data[problem_id]["name"] }}</h2>
+<div class="wrap">
+    <div class="left" style="height: 100%;width: 45%;">
+        <iframe src="{{ problem_id|get_problem_desc }}" style="width: 100%;height: 750px;"></iframe>
+    </div>
+    <div class="right" style="height: 100%;width: 54%;">
+        <form action="/api/judge" enctype="multipart/form-data" method="post" onsubmit="return submit_check();">
+            <p><input type="hidden" name="browser" value="True"></p>
+            <p><input type="hidden" placeholder="(週數-題號 e.g. 第一周第一題 -> 1-1)" id="problem_id" name="problem_id"
+                    value="{{ problem_id }}" style="width: 300px;" readonly></p>
+                你的code：<br>
+                <div style="display: flex;flex-direction: row;">
+                <span style="font-size: 75%;margin: 0px 10px;">
+                    繳交類型：
+                    <label>
+                        <input type="radio" name="submit_type" id="submit_type_text" value="text"
+                            onclick="toggle_submit_type()" checked>文字
+                    </label>
+                    <label>
+                        <input type="radio" name="submit_type" id="submit_type_file" value="file"
+                            onclick="toggle_submit_type()">檔案
+                    </label>
+                </span>
+                <span style="font-size: 75%;margin: 0px 10px;">
+                    語言：
+                    <label>
+                        <input type="radio" name="language" id="language_c" value="C" checked>C
+                    </label>
+                    <label>
+                        <input type="radio" name="language" id="language_cpp" value="C++">C++
+                    </label>
+                    <br>
+                </span>
+                </div>
+                <textarea class="linenumber" name="text" id="codetext" style="width:600px;height:400px;"></textarea>
+                <input type="file" name="file" id="file" style="display:none;">
+            <!-- </p> -->
+            <!-- <p> -->
+                <br>
+                自定義輸入：
+                <label class="switch">
+                    <input type="checkbox" id="toggle" onclick="toggle_testcase();">
+                    <span class="slider round"></span>
+                </label><br>
+                <input type="hidden" name="custom_testcase" id="custom_testcase" value="False">
+                <textarea class="linenumber" placeholder="在這裡輸入你想測試的測資" id="testcase" name="testcase"
+                    style="width:600px;height:400px;white-space: nowrap;display:none;"></textarea>
+            <!-- </p> -->
+            <p><input type="submit" id="submit_buttom"></p>
+        </form>
+    </div>
+</div>
+
+{%- endblock -%}
+
+{%- block script -%}
+<script>
+    function toggle_testcase() {
+        if (document.getElementById("toggle").checked) {
+            document.getElementById("testcase").style.display = "inline";
+            document.getElementById("custom_testcase").value = "True";
+        }
+        else {
+            document.getElementById("testcase").style.display = "none";
+            document.getElementById("custom_testcase").value = "False";
+        }
+    }
+
+    function toggle_submit_type() {
+        if (document.getElementById('submit_type_file').checked) {
+            document.getElementById('codetext').style.display = 'none';
+            document.getElementById('file').style.display = 'inline';
+        }
+        else if (document.getElementById('submit_type_text').checked) {
+            document.getElementById('codetext').style.display = 'inline';
+            document.getElementById('file').style.display = 'none';
+        }
+    }
+
+    function submit_check() {
+        if (document.getElementById("problem_id").value.length == 0) {
+            alert("題號不能為空");
+            return false;
+        }
+        if (document.getElementById("submit_type_text").checked) {
+            document.getElementById("file").disabled = true;
+            if (document.getElementById("codetext").value.length == 0) {
+                alert("你不能提交空白的code");
+                return false;
+            }
+        }
+        else if (document.getElementById("submit_type_file").checked) {
+            document.getElementById("codetext").disabled = true;
+            if (document.getElementById("file").value.length == 0) {
+                alert("你不能提交空白的code");
+                return false;
+            }
+        }
+        if (!document.getElementById("toggle").checked) {
+            document.getElementById("testcase").disabled = true;
+        }
+
+        if(document.getElementById("language_c").checked)
+        {
+            var keywords = ["iostream","bits/stdc++","algorithm"];
+
+            for(var i = 0;i < keywords.length;i++)
+            {
+                if (document.getElementById("codetext").value.includes(keywords[i]))
+                {
+                    var res = confirm("在程式碼中發現\"" + keywords[i] + "\"，確定要以C語言提交？");
+                    return res;
+                }
+            }
+            
+        }
+
+        document.getElementById("submit_buttom").disabled = true;
+
+    }
+    function load_page() {
+        document.getElementById("codetext").value = localStorage.getItem(
+            "code_" + document.getElementById("problem_id").value
+        )
+        toggle_submit_type();
+        toggle_testcase();
+        setTimeout(()=>{
+            document.getElementById("codetext").addEventListener("change",save_code)},
+            5000
+        );
+        setInterval(save_code, 1000)
+    }
+
+    function verify_stu(id) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('get', '/api/verify_stuid', false);
+        xhr.send()
+        console.log(JSON.parse(xhr.responseText)['OK'])
+        return JSON.parse(xhr.responseText)['OK']
+    }
+
+    function save_code() {
+        localStorage.setItem(
+            "code_" + document.getElementById("problem_id").value,
+            document.getElementById("codetext").value
+        )
+    }
+
+    window.addEventListener("load", load_page);
+    // window.onbeforeunload = save_code();
+</script>
+{%- endblock -%}

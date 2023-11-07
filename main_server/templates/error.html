@@ -1,0 +1,11 @@
+{%- extends base_name -%}
+
+{%- block title -%}
+{{ err.name }}
+{%- endblock -%}
+
+{%- block main -%}
+<h1>{{ err.name }}</h1>
+<p>{{ err.description }}</p>
+<button onclick="window.history.back();">上一頁</button>
+{%- endblock -%}

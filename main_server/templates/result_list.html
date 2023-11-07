@@ -1,0 +1,180 @@
+{%- extends base_name -%}
+
+{%- block title -%}Results{%- endblock -%}
+{%- block main -%}
+<h2>Results</h2>
+<div class="wrap">
+    <div class="left">
+        <table class="result-table">
+            <thead>
+                <tr>
+                    <th style="width:50px;">No.</th>
+                    <th style="width:180px;">Time</th>
+                    <th style="width:140px;">ID</th>
+                    <th style="width:100px;">學號</th>
+                    {%- if is_admin -%}
+                    <th style="width:100px;">Name</th>
+                    {%- endif -%}
+                    <th style="width:200px;">Statu</th>
+                    <th style="width:100px;">language</th>
+                    <th style="width:500px;">Problem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {%- if results|length == 0-%}
+                <tr>
+                    <td colspan="{%- if user_type == 'TA' -%}7{%- else -%}6{%- endif -%}">No data</td>
+                </tr>
+                {%- else -%}
+                {%- set count = namespace(val=(page-1)*line) -%}
+                {%- for r in results -%}
+                <tr>
+                    {%- set count.val = count.val + 1 -%}
+                    <td>{{ count.val }}</td>
+                    <td>{{ r[3] }}</td>{# time #}
+                    {%- if r[0] == session.get("id") or user_type == "TA" -%}
+                    <td><a class="result-table-link" href="/results/{{ r[3][0:4]+r[3][5:7]+r[3][8:10] }}/{{ r[2] }}">{{
+                            r[2][:13] }}</a></td>{# res id #}
+                    {%- else -%}
+                    <td>{{r[2][:13] }}</td>{# res id #}
+                    {%- endif -%}
+                    <td>{{ r[0] }}{% if r[5] %}(auto){% endif %}</td>{# student id #}
+                    {%- if user_type == "TA" -%}
+                    <td style="width:100px;">{{ user_data.get(r[0].lower(),{}).get("name","?") }}</td>
+                    {%- endif -%}
+                    <td>{{ r[4] }}</td>{# status #}
+                    <td>{{ r[6] }}</td>{# language #}
+                    <td>{{ r[1] }} {{ problem_data.get(r[1],{}).get("name","") }}</td>
+                </tr>
+                {%- endfor -%}
+                {%- endif -%}
+            </tbody>
+        </table>
+        {%- if page > 1 -%}
+        <a href="/results?page={{ (url_params.get('page','1')|int)-1 }}{%- for k,v in url_params.items() -%}{%- if k != 'page' or (k == 'line' and v != 20) -%}&{{ k }}={{ v }}{%- endif -%}{%- endfor -%}" style="padding: 10px;"><button>上一頁</button></a>
+        {%- endif -%}
+        {%- if page < ((total-1) // (url_params.get('line','20')|int) + 1) -%}
+        <a href="/results?page={{ (url_params.get('page','1')|int)+1 }}{%- for k,v in url_params.items() -%}{%- if k != 'page' or (k == 'line' and v != 20) -%}&{{ k }}={{ v }}{%- endif -%}{%- endfor -%}" style="padding: 10px;"><button>下一頁</button></a>
+        {%- endif -%}
+    </div>
+    <div class="right">
+    {#%- if user_data.get(session.get("id").lower(),{}).get("type") == "TA" -%#}
+    <h3>篩選</h3>
+    <form id="filter" method="get" onsubmit="delete_blank();">
+        <p>
+            只看自己：
+            <!-- <input type="hidden" id="self_only_hidden" name="self_only" value="0"> -->
+            <label class="switch">
+                <input type="checkbox" id="self_only" name="self_only" onclick="submit_filter()" value="1" {%- if request.args.get("self_only") == "1" or (request.args.get("self_only","") == "" and user_type != "TA") -%}checked{%- endif -%}><span class="slider round"></span>
+            </label>
+        </p>
+        <p>
+            只看Auto：
+            <!-- <input type="hidden" id="auto_hidden" name="auto" value="0"> -->
+            <label class="switch">
+                <input type="checkbox" id="auto" name="auto" onclick="submit_filter()" value="1" {%- if request.args.get("auto") == "1" -%}checked{%- endif -%}><span class="slider round"></span>
+            </label>
+        </p>
+        <p>
+            不看Auto：
+            <!-- <input type="hidden" id="noauto_hidden" name="noauto" value="0"> -->
+            <label class="switch">
+                <input type="checkbox" id="noauto" name="noauto" onclick="submit_filter()" value="1" {%- if request.args.get("noauto") == "1" -%}checked{%- endif -%}><span class="slider round"></span>
+            </label>
+        </p>
+        <hr>
+        {#%- if user_type == "TA"-%#}
+        <p>
+            <label>
+                學號：<input type="text" name="student_id" value="{{ url_params.get('student_id','')}}">
+            </label>
+        </p>
+        {#%- endif -%#}
+        <p>時間範圍<br>
+            <label>
+                從：<input type="datetime-local" name="start_time" value="{{ url_params.get('start_time','')}}" step="1">
+            </label><br>
+            <label>
+                到：<input type="datetime-local" name="end_time" value="{{ url_params.get('end_time','')}}" step="1">
+            </label>
+        </p>
+        <p>
+            題目：
+            <select name="problem_id">
+                <option value=""></option>
+                {%- for p in problem_data if p|verify_problem_start_time -%}
+                <option value="{{p}}" {%- if url_params.get('problem_id',"") == p -%}selected="selected"{%- endif -%}>{{p}} {{problem_data[p]["name"]}}</option>
+                {%- endfor -%}
+            </select>
+        </p>
+        <p>Status：
+            <select name="status">
+                <option value=""></option>
+                {%- for s in all_status -%}
+                <option value="{{s}}" {%- if url_params.get('status',"") == s -%}selected="selected"{%- endif -%}>{{s}}</option>
+                {%- endfor -%}
+            </select>
+        </p>
+        <p>
+        <label>第
+            <input type="text" id="page" name="page" value="{{ url_params.get('page',1) }}" style="text-align: center;max-width: 50px;">
+        / {{ (total-1) // (url_params.get('line','20')|int) + 1 }} 頁</label>，
+        <label>每頁
+            <input type="text" id="line" name="line" value="{{ url_params.get('line',20) }}" style="text-align: center;max-width: 50px;">
+        筆</label>
+        </p>
+        <p>
+            <input type="button" value="查詢" onclick="submit_filter()">
+        </p>
+    </form>
+    {#%- endif -%#}
+    </div>
+</div>
+{%- endblock -%}
+
+{%- block script -%}
+<script>
+    function submit_filter(){
+        ele = document.getElementById("filter");
+        var ele_list = ele.getElementsByTagName("input");
+        for(var i = 1; i < ele_list.length-1; i++)
+        {
+            if(ele_list[i].value.length == 0){
+                ele_list[i].disabled = true;
+            }
+        }
+        var ele_list = ele.getElementsByTagName("select");
+        for(var i = 0; i < ele_list.length; i++)
+        {
+            if(ele_list[i].value.length == 0){
+                ele_list[i].disabled = true;
+            }
+        }
+        var page = document.getElementById("page");
+        if(page.value == "1"){
+            page.disabled = true;
+        }
+        var line = document.getElementById("line");
+        if(line.value == "20"){
+            line.disabled = true;
+        }
+        // var so = document.getElementById("self_only");
+        // if(so.checked){
+        //     var soh = document.getElementById("self_only_hidden");
+        //     soh.disabled=true;
+        // }
+        // var au = document.getElementById("auto");
+        // if(au.checked){
+        //     var auh = document.getElementById("auto_hidden");
+        //     auh.disabled=true;
+        // }
+        // var nau = document.getElementById("noauto");
+        // if(nau.checked){
+        //     var nauh = document.getElementById("noauto_hidden");
+        //     nauh.disabled=true;
+        // }
+        var filter = document.getElementById("filter");
+        filter.submit();
+    }
+</script>
+{%- endblock -%}

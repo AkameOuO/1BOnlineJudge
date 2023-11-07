@@ -1,0 +1,11 @@
+{%- extends base_name -%}
+
+{%- block title -%}Demo Login{%- endblock -%}
+{%- block main -%}
+<h1>Choice your identity</h1>
+<hr>
+{%- for u in userdata -%}
+<p><a href="/demo_login/{{ u }}">{{ userdata[u]["name"] }}</a></p>
+<br>
+{%- endfor -%}
+{%- endblock -%}

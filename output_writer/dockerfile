@@ -1,0 +1,10 @@
+FROM python:3.10.4
+STOPSIGNAL SIGKILL
+#For instant stop server,
+#I didn't find any method to stop flask server instant through SIGTERN
+#I also tried signal.signal,but no effect.
+COPY ./requirements.txt /app/
+WORKDIR /app
+RUN pip install -r requirements.txt &&\
+mkdir /output
+CMD python server.py

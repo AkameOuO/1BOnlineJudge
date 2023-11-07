@@ -1,0 +1,206 @@
+{%- extends base_name -%}
+
+{%- block title -%}Result{%- endblock -%}
+{%- block main -%}
+    <p>學號：{{ author }}{% if auto %}(auto){% endif %}</p>
+    <p>題號：<a href="/problems/{{problem_id}}">{{ problem_id }} {{ problem_data.get(problem_id,{}).get("name","") }}</a></p>
+    <p>分數：{{ score }}</p>
+    <p>語言：{{ language }}</p>
+    <p style="white-space: pre;">結果：{{ message.split("\n")[0] }}<br>
+    {%- if message.split("\n")|my_length > 1 -%}
+    <textarea class="linenumber" id="output_msg" disabled >{{ "\n".join(message.split("\n")[1:]) }}</textarea>
+    <script>
+        setTimeout( () => {
+            var ele = document.getElementById("output_msg");
+            ele.style.width = ele.scrollWidth + 10 + "px";
+        },
+        1
+        )
+    </script>
+    {%- endif -%}
+    </p>
+    <p>提交時間：{{ time }}</p>
+    <p>
+        <textarea class="linenumber" id="code" style="width: none;" readonly>{{ code }}</textarea>
+        <script>
+            setTimeout( () => {
+                var ele = document.getElementById("code");
+                ele.style.width = ele.scrollWidth + 10 + "px";
+            },
+            1
+            )
+        </script>
+        <br>
+        <button onclick="edit_code();">Edit code</button>
+    </p>
+    {%- if logs|my_length > 0 -%}
+    <p>輸出資訊：
+        <!-- <span style="font-size:75% ;">字型測試
+        <label><input value="CascadiaMono" type="radio" name="font-type" onclick="change_font(this);" checked>A</label>
+        <label><input value="CascadiaCode" type="radio" name="font-type" onclick="change_font(this);">B</label>
+        </span> -->
+    </p>
+    {%- for log in logs -%}
+    <div class="table-board">
+        <div class="table-head">
+            <div class="table-title center">
+                {%- if log['case'] != 0 -%}
+                <span><a href="/testcases/{{ problem_id }}/{{ log['case'] }}">Problem {{ problem_id }}, Case {{ log["case"] }}</a></span>
+                {%- else -%}
+                <span>Problem {{ problem_id }}, Case Custom</span>
+                {%- endif -%}
+            </div>
+            <div class="table-title center {% if log['status'] == 'Accepted' -%}correct{%- else -%}wrong{%- endif -%}">
+                <span class="status">{{ log["status"] }}</span>
+            </div>
+            <div class="table-title center">
+                <span class="status">{{ log["message"] }}</span>
+            </div>
+            
+        {%- if log["log"]|my_length > 0 -%}
+            <div class="table-subtitle">
+                <div class="table-col line center">
+                    <span class="table-col-item">line</span>
+                </div>
+                <div class="table-col output center">
+                    <span class="table-col-item">Your output</span>
+                </div>
+                <div class="table-col output center">
+                    <span class="table-col-item">Correct output</span>
+                </div>
+            </div>
+        </div>
+        <div class="table-body">
+            <div class="table-col line" id="line{{ log["case"] }}">
+                {%- set index = namespace(val=1) -%}
+                {%- for r,a in log["log"] -%}
+                {%- if a != r -%}
+                
+                <span class="table-col-item wrong">{{ index.val }}</span>
+                {%- else -%}
+                <span class="table-col-item correct">{{ index.val }}</span>
+                {%- endif -%}
+                {%- set index.val = index.val + 1 -%}
+                {%- endfor -%}
+            </div>
+            <div class="table-col output" id="your{{ log["case"] }}">
+                {%- for r,a in log["log"] -%}
+                {%- if r == a -%}
+                <span class="table-col-item"><font class="correct">{{ r|replace_invicible }}</font></span>
+                {%- else -%}
+                {%- if r is none -%}{%- set r = "" -%}{%- endif -%}
+                {%- if a is none -%}{%- set a = "" -%}{%- endif -%}
+                {%- set index = namespace(val=0) -%}
+                {%- set flag = namespace(val=0) -%}
+                {%- set min_length = r|my_length -%} {%- if r|my_length > a|my_length -%} {%- set min_length = a|my_length -%} {%- endif -%}
+                {%- for i in range(0,min_length) -%} {%- if (r[i] == a[i] and flag.val == 0) -%} {%- set index.val = i+1 -%} {%- else -%} {%- set flag.val = 1 -%} {%- endif -%}{%- endfor -%}
+                
+                <span class="table-col-item">{%- if index.val > 0 -%}<font class="correct">{{ r[:index.val]|replace_invicible }}</font>{%- endif -%}<font class="wrong">{{ r[index.val:]|replace_invicible }}</font></span>
+                
+                {%- endif -%}
+                {%- endfor -%}
+            </div>
+            <div class="table-col output" id="correct{{ log["case"] }}">
+                {%- for r,a in log["log"] -%}
+                {%- if r == a -%}
+                <span class="table-col-item"><font class="correct">{{ a|replace_invicible }}</font></span>
+                {%- else -%}
+                {%- if r is none -%}{%- set r = "" -%}{%- endif -%}
+                {%- if a is none -%}{%- set a = "" -%}{%- endif -%}
+
+                {%- set index = namespace(val=0) -%}
+                {%- set flag = namespace(val=0) -%}
+                {%- set min_length = r|my_length -%} {%- if r|my_length > a|my_length -%} {%- set min_length = a|my_length -%} {%- endif -%}
+                {%- for i in range(0,min_length) -%} {%- if (r[i] == a[i] and flag.val == 0) -%} {%- set index.val = i+1 -%} {%- else -%} {%- set flag.val = 1 -%} {%- endif -%}{%- endfor -%}
+                <span class="table-col-item">{%- if index.val > 0 -%}<font class="correct">{{ a[:index.val]|replace_invicible }}</font>{%- endif -%}<font class="wrong">{{ a[index.val:]|replace_invicible }}</font></span>
+                
+                {%- endif -%}
+                {%- endfor -%}
+            </div>
+        {%- endif -%}
+        </div>
+    </div>
+    <p></p>{#<!--#}
+        <script>{#-->#}
+        var your = document.getElementById("your{{ log['case'] }}");
+        var cor = document.getElementById("correct{{ log['case'] }}");
+        var line = document.getElementById("line{{ log['case'] }}");
+        your.addEventListener("scroll",sync_your{{ log['case'] }});
+        cor.addEventListener("scroll",sync_cor{{ log['case'] }});
+        line.addEventListener("scroll",sync_line{{ log['case'] }});
+        {#<!--#}
+    </script>{#-->#}
+    {%- endfor -%}
+    {%- endif -%}
+{%- endblock -%}
+
+{%- block head -%}{#<!--#}
+<script>{#-->#}
+
+
+
+{%- for log in logs -%}
+{%- if log["log"]|my_length > 0 -%}
+    function sync_line{{ log["case"] }}(){
+        var cor{{ log["case"] }} = document.getElementById("correct{{ log["case"] }}");
+        cor{{ log["case"] }}.removeEventListener("scroll",sync_cor{{ log["case"] }});
+        cor{{ log["case"] }}.scrollTop = this.scrollTop;
+        cor{{ log["case"] }}.addEventListener("scroll",sync_cor{{ log["case"] }});
+
+        var your{{ log["case"] }} = document.getElementById("your{{ log["case"] }}");
+        your{{ log["case"] }}.removeEventListener("scroll",sync_your{{ log["case"] }});
+        your{{ log["case"] }}.scrollTop = this.scrollTop;
+        your{{ log["case"] }}.addEventListener("scroll",sync_your{{ log["case"] }});
+    }
+
+    function sync_your{{ log["case"] }}(){
+        var cor{{ log["case"] }} = document.getElementById("correct{{ log["case"] }}");
+        cor{{ log["case"] }}.removeEventListener("scroll",sync_cor{{ log["case"] }});
+        cor{{ log["case"] }}.scrollTo(this.scrollLeft,this.scrollTop);
+        cor{{ log["case"] }}.addEventListener("scroll",sync_cor{{ log["case"] }});
+        
+        var line{{ log["case"] }} = document.getElementById("line{{ log["case"] }}");
+        line{{ log["case"] }}.removeEventListener("scroll",sync_line{{ log["case"] }});
+        line{{ log["case"] }}.scrollTo(this.scrollLeft,this.scrollTop);
+        line{{ log["case"] }}.addEventListener("scroll",sync_line{{ log["case"] }});
+    }
+
+    function sync_cor{{ log["case"] }}(){
+        var your{{ log["case"] }} = document.getElementById("your{{ log["case"] }}");
+        your{{ log["case"] }}.removeEventListener("scroll",sync_your{{ log["case"] }});
+        your{{ log["case"] }}.scrollTo(this.scrollLeft,this.scrollTop);
+        your{{ log["case"] }}.addEventListener("scroll",sync_your{{ log["case"] }});
+        
+        var line{{ log["case"] }} = document.getElementById("line{{ log["case"] }}");
+        line{{ log["case"] }}.removeEventListener("scroll",sync_line{{ log["case"] }});
+        line{{ log["case"] }}.scrollTo(this.scrollLeft,this.scrollTop);
+        line{{ log["case"] }}.addEventListener("scroll",sync_line{{ log["case"] }});
+    }
+
+{%- endif -%}
+{%- endfor %}
+
+{#<!--#}
+</script>{#-->#}
+{%- endblock -%}
+
+
+{%- block script -%}
+{#<!--#}
+<script>{#-->#}
+function change_font(ele){
+    document.documentElement.style.setProperty("--span-table-col-item-font-family",ele.value)
+}
+
+function edit_code(){
+    localStorage.setItem(
+        "code_{{problem_id}}",
+        document.getElementById("code").value
+    );
+    window.location.href = "/problems/{{problem_id}}";
+
+}
+    
+    {#<!--#}
+</script>{#-->#}
+{%- endblock -%}

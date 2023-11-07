@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+  judger:
+    container_name: judger
+    hostname: judge.akameowo.ml
+    image: main:judger
+    restart: always
+    build: ./main_server
+    volumes:
+      - ./main_server:/app:ro
+      - ./output:/output
+    environment:
+      LANG: en_US.utf8 
+      TZ: Asia/Taipei
+    ports:
+      - 192.168.1.99:443:443
+    depends_on:
+      - output_writer
+
+  output_writer:
+    container_name: output_writer
+    image: output_writer:judger
+    restart: always
+    build: ./output_writer
+    volumes:
+      - ./output_writer:/app:ro
+      - ./main_server:/output
+    environment:
+      LANG: en_US.utf8
+      TZ: Asia/Taipei

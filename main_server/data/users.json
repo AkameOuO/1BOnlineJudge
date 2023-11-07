@@ -1,0 +1,14 @@
+{
+    "demo_user1": {
+        "name": "Demo User1",
+        "type": "user"
+    },
+    "demo_user2": {
+        "name": "Demo User2",
+        "type": "user"
+    },
+    "demo_admin": {
+        "name": "Demo Admin",
+        "type": "admin"
+    }
+}

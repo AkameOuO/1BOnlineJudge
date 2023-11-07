@@ -1,0 +1,18 @@
+{%- extends base_name -%}
+
+{%- block title -%}Testcases{%- endblock -%}
+{%- block main -%}
+<h2>Testcase list of {{ problem_id }} {{ problem_data[problem_id]["name"] }}</h2>
+{%- for c in cases -%}
+<div style="width: 480px;display: flex;flex-direction: row;justify-content: space-between;align-items: flex-end;margin-left: 10px;">
+    <a href="/testcases/{{ problem_id }}/{{ c }}">
+        <h4 style="margin-bottom: 0px;">Case {{ c }}</h4>
+    </a>
+    <a href="/testcases/{{ problem_id }}/{{ c }}?download">
+        <button>download</button>
+    </a>
+</div>
+{#<textarea id="testcase{{ c }}" class="linenumber" readonly>{{ contents[c].replace('\n','\r\n') }}</textarea>#}
+<p></p>
+{%- endfor -%}
+{%- endblock -%}
